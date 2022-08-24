@@ -41,9 +41,12 @@ We also put the package `supervoxels` in `./data`, run our modified file `./data
 1. Download pre-trained ResNet-101 weights [vanilla version](https://download.pytorch.org/models/resnet101-63fe2227.pth) or [deeplabv3 version](https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth) and put your checkpoints folder, then replace the absolute path in `Line 22` or `Line 20` of the code `./models/encoder.py`.  
 2. Run `./scripts/train_<abd,cmr>_mr.sh`  
 #### Note:  
-1. The alpha coefficient for dual-scale features in `Line 24` of the code `./models/fewshot.py` should be manually modified.  
+The alpha coefficient for dual-scale features in `Line 24` of the code `./models/fewshot.py` should be manually modified.  
 For setting 1, the alpha = [0.9, 0.1]  
 For setting 2, the alpha = [0.6, 0.4]  
-2. The configuration of `exclude_label` in `config.py`.  
-For setting 1, exclude_label = None  
-For setting 2, exclude_label = 0 for [1,4] (liver,spleen)  or 1 for [2,3] (right/left kidney)  
+
+### Testing
+Run `./scripts/val.sh`
+
+### Acknowledgement
+This code is based on [SSL-ALPNet](https://arxiv.org/abs/2007.09886v2) (ECCV'20) by [Ouyang et al.](https://github.com/cheng-01037/Self-supervised-Fewshot-Medical-Image-Segmentation.git) and [ADNet](https://www.sciencedirect.com/science/article/pii/S1361841522000378) by [Hansen et al.](https://github.com/sha168/ADNet.git). 
