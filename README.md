@@ -38,4 +38,12 @@ We put the pre-processed images and their corresponding labels in `./data/CHAOST
 We also put the package `supervoxels` in `./data`, run our modified file `./data./supervoxels/generate_supervoxels.py` to implement pseudolabel generation. The generated supervoxels for `CHAOST2` and `CMR` datasets are put in `./data/CHAOST2/supervoxels_5000` folder and `./data/CMR/supervoxels_1000` folder, respectively.  
 
 ### Training  
-1. Download pre-trained ResNet-101 weights [vanilla version](https://download.pytorch.org/models/resnet101-63fe2227.pth) or [deeplabv3 version](https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth) and put your checkpoints folder, then replace the absolute path in `./models/encoder.py`
+1. Download pre-trained ResNet-101 weights [vanilla version](https://download.pytorch.org/models/resnet101-63fe2227.pth) or [deeplabv3 version](https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth) and put your checkpoints folder, then replace the absolute path in `Line 22` or `Line 20` of the code `./models/encoder.py`.  
+2. Run `./scripts/train_<abd,cmr>_mr.sh`  
+#### Note:  
+1. The alpha coefficient for dual-scale features in `Line 24` of the code `./models/fewshot.py` should be manually modified.  
+For setting 1, the alpha = [0.9, 0.1]  
+For setting 2, the alpha = [0.6, 0.4]  
+2. The configuration of `exclude_label` in `config.py`.  
+For setting 1, exclude_label = None  
+For setting 2, exclude_label = 0 for [1,4] (liver,spleen)  or 1 for [2,3] (right/left kidney)  
