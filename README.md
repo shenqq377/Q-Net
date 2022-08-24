@@ -8,7 +8,7 @@ Deep learning has achieved tremendous success in computer vision, while medical 
 
 Illustration of the proposed method in testing time. We use a shared feature encoder to learn deep feature maps in dual-path, corresponding to two feature scales: $32\times32$ and $64\times64$. The flows of operations are the same for these two paths, while we modularize the operations of the 2nd path and drawn them in gray to save space. In each path, we first learn one foreground prototype $\textbf{p}$ from the support features. Next we compute the similarity map between each query feature vector and the prototype. Then we predict the initial segmentation mask $\tilde{\textbf{m}}^q_{32}$ via anomaly detection performed on the similarity map with threshold $T$, which is learned from query image feature by two fully-connected layers. Then we refine the prototype by repeating the following two operations for a fixed number of times: (1) replacing the foreground feature vectors with the prototype; (2) minimizing a reconstruction loss. In training time, the prototype refinement module is turned off.  
 
-## Dependencies
+### Dependencies
 Please install following essential dependencies:
 ```
 dcm2nii
@@ -26,13 +26,16 @@ torchvision=0.11.2
 tqdm==4.62.3
 ```
 
-## Datasets and pre-processing
-Download:
-1. Abdominal MRI  [Combined Healthy Abdominal Organ Segmentation dataset](https://chaos.grand-challenge.org/)
-2. Cardiac MRI [Multi-sequence Cardiac MRI Segmentation dataset (bSSFP fold)](http://www.sdspeople.fudan.edu.cn/zhuangxiahai/0/mscmrseg/)  
+### Datasets and pre-processing
+Download:  
+1. **Abdominal MRI**  [Combined Healthy Abdominal Organ Segmentation dataset](https://chaos.grand-challenge.org/)  
+2. **Cardiac MRI** [Multi-sequence Cardiac MRI Segmentation dataset (bSSFP fold)](http://www.sdspeople.fudan.edu.cn/zhuangxiahai/0/mscmrseg/)  
 
-Pre-processing is performed according to [Ouyang et al.](https://github.com/cheng-01037/Self-supervised-Fewshot-Medical-Image-Segmentation.git) and we follow the procedure on their github repository.  
+**Pre-processing** is performed according to [Ouyang et al.](https://github.com/cheng-01037/Self-supervised-Fewshot-Medical-Image-Segmentation.git) and we follow the procedure on their github repository.  
 We put the pre-processed images and their corresponding labels in `./data/CHAOST2/chaos_MR_T2_normalized` folder for Abdominal MRI and `./data/CMR/cmr_MR_normalized` folder for Cardiac MRI.  
 
-Supervoxel segmentation is performed according to [Hansen et al.](https://github.com/sha168/ADNet.git) and we follow the procedure on their github repository.  
-We also put the package `supervoxels` in `./data`, run our modified file `./data./supervoxels/generate_supervoxels.py` to implement supervoxel segmentaion. The generated supervoxels for `CHAOST2` and `CMR` datasets are put in `./data/CHAOST2/supervoxels_5000` folder and `./data/CMR/supervoxels_1000` folder, respectively.
+**Supervoxel segmentation** is performed according to [Hansen et al.](https://github.com/sha168/ADNet.git) and we follow the procedure on their github repository.  
+We also put the package `supervoxels` in `./data`, run our modified file `./data./supervoxels/generate_supervoxels.py` to implement pseudolabel generation. The generated supervoxels for `CHAOST2` and `CMR` datasets are put in `./data/CHAOST2/supervoxels_5000` folder and `./data/CMR/supervoxels_1000` folder, respectively.  
+
+### Training  
+1. Download pre-trained ResNet-101 weights [vanilla version](https://download.pytorch.org/models/resnet101-63fe2227.pth) or [deeplabv3 version](https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth) and put your checkpoints folder, then replace the absolute path in `./models/encoder.py`
