@@ -23,6 +23,10 @@ torchvision=0.11.2
 tqdm==4.62.3
 ```
 
-## Datasets
-#### Abdominal MRI
- 1. Download Combined Healthy Abdominal Organ Segmentation dataset and put
+## Datasets and pre-processing
+Download:
+1. Abdominal MRI  [Combined Healthy Abdominal Organ Segmentation dataset](https://chaos.grand-challenge.org/)
+2. Cardiac MRI [Multi-sequence Cardiac MRI Segmentation dataset (bSSFP fold)](http://www.sdspeople.fudan.edu.cn/zhuangxiahai/0/mscmrseg/)
+
+Pre-processing is performed according to [Ouyang et al.](https://github.com/cheng-01037/Self-supervised-Fewshot-Medical-Image-Segmentation.git) and we follow the procedure on their github repository.  
+We put the pre-processed images and their corresponding labels in `./data/CHAOST2/chaos_MR_T2_normalized` folder for Abdominal MRI and `./data/CMR/cmr_MR_normalized` folder for Cardiac MRI.
