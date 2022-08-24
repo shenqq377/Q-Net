@@ -10,6 +10,7 @@ RUNS=1
 ALL_EV=(0 1 2 3 4) # 5-fold cross validation (0, 1, 2, 3, 4)
 TEST_LABEL=[1,2,3,4]
 EXCLUDE_LABEL=None
+TEST=1234  # flag for folder name, '1234' for not excluding any labels,  '14' for excluding label 2/3, '23' for excluding label 1/4
 USE_GT=False
 ###### Training configs ######
 NSTEP=30000
@@ -25,7 +26,7 @@ for EVAL_FOLD in "${ALL_EV[@]}"
 do
   PREFIX="train_${DATASET}_cv${EVAL_FOLD}"
   echo $PREFIX
-  LOGDIR="./exps_on_${DATASET}_multi_91"
+  LOGDIR="./exps_on_${DATASET}_multi_91_Test_${TEST}"
 
   if [ ! -d $LOGDIR ]
   then
