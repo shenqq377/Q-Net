@@ -7,7 +7,8 @@ Deep learning has achieved tremendous success in computer vision, while medical 
 
 ## Dependencies
 Please install following essential dependencies:
-```dcm2nii
+```
+dcm2nii
 json5==0.8.5
 jupyter==1.0.0
 nibabel==2.5.1
@@ -20,3 +21,8 @@ SimpleITK==1.2.3
 torch==1.10.2
 torchvision=0.11.2
 tqdm==4.62.3
+```
+
+## Datasets
+#### Abdominal MRI
+ 1. Download Combined Healthy Abdominal Organ Segmentation dataset and put
