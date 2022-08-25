@@ -1,10 +1,16 @@
 # Q-Net
 Codes for the following paper:
+
 @article{shen2022qnet,
+
   title={Q-Net: Query-Informed Few-Shot Medical Image Segmentation},
+  
   author={Shen, Qianqian and Li, Yanan and Jin, Jiyong and Liu, Bin},
+  
   journal={arXiv preprint arXiv:2208.11451},
+  
   year={2022}
+  
 }
 
 ![](https://github.com/ZJLAB-AMMI/Q-Net/blob/main/the_framework.png?raw=true) 
