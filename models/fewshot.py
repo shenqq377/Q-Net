@@ -23,7 +23,7 @@ class FewShotSeg(nn.Module):
         self.criterion = nn.NLLLoss()
         self.alpha = torch.Tensor([0.9, 0.1])
 
-    def forward(self, supp_imgs, supp_mask, qry_imgs, train=False, t_loss_scaler=1, n_iters=30):
+    def forward(self, supp_imgs, supp_mask, qry_imgs, train=False, n_iters=30):
         """
         Args:
             supp_imgs: support images
@@ -88,11 +88,12 @@ class FewShotSeg(nn.Module):
                     with torch.enable_grad():
                         for n in range(len(qry_fts)):
                             pred_mask = torch.sum(qry_pred[n], dim=-3)
+                            pred_mask = torch.stack((1.0 - pred_mask, pred_mask), dim=1).argmax(dim=1, keepdim=True)
+                            pred_mask = pred_mask.repeat([*qry_fts.shape[1:-2],1,1])
                             bg_fts = qry_fts[n][epi] * (1 - pred_mask)
                             fg_fts = torch.zeros_like(qry_fts[n][epi])
                             for way in range(self.n_ways):
-                                fg_fts += fg_prototypes_[n][way].repeat(*pred_mask.shape[-2:]).view(
-                                    *qry_fts[n][epi].shape) * qry_pred[n][way][None, ...]
+                                fg_fts += fg_prototype_[way].unsqueeze(-1).unsqueeze(-1).repeat(*qry_pred.shape) * pred_mask[way][None, ...]
                             new_fts = bg_fts + fg_fts
                             loss += F.cross_entropy(qry_fts[n][epi], new_fts) / len(qry_fts) / n_iters
 
