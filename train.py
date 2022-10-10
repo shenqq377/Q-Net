@@ -90,7 +90,7 @@ def main(_run, _config, _log):
                               drop_last=True)
 
     n_sub_epochs = _config['n_steps'] // _config['max_iters_per_load']  # number of times for reloading
-    log_loss = {'total_loss': 0, 'query_loss': 0, 'align_loss': 0, 'thresh_loss': 0}
+    log_loss = {'total_loss': 0, 'query_loss': 0, 'align_loss': 0}
 
     i_iter = 0
     _log.info(f'Start training...')
