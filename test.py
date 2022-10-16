@@ -47,7 +47,7 @@ def main(_run, _config, _log):
     torch.set_num_threads(1)
 
     _log.info(f'Create model...')
-    model = FewShotSeg()
+    model = FewShotSeg(alpha=_config['alpha'])
     model.cuda()
     model.load_state_dict(torch.load(_config['reload_model_path'], map_location='cpu'))
 
@@ -127,7 +127,7 @@ def main(_run, _config, _log):
                     query_pred_s = []
                     for i in range(query_image_s.shape[0]):
                         _pred_s, _ = model([support_image_s], [support_fg_mask_s], [query_image_s[[i]]],
-                                           train=False)  # C x 2 x H x W
+                                           train=False, n_iters=_config['n_iters'])  # C x 2 x H x W
                         query_pred_s.append(_pred_s)
                     query_pred_s = torch.cat(query_pred_s, dim=0)
                     query_pred_s = query_pred_s.argmax(dim=1).cpu()  # C x H x W
