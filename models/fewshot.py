@@ -12,7 +12,7 @@ from .encoder import Res101Encoder
 
 class FewShotSeg(nn.Module):
 
-    def __init__(self, pretrained_weights="deeplabv3"):
+    def __init__(self, pretrained_weights="deeplabv3", alpha=0.9):
         super().__init__()
 
         # Encoder
@@ -21,9 +21,9 @@ class FewShotSeg(nn.Module):
         self.device = torch.device('cuda')
         self.scaler = 20.0
         self.criterion = nn.NLLLoss()
-        self.alpha = torch.Tensor([0.9, 0.1])
+        self.alpha = torch.Tensor([alpha, 1-alpha])
 
-    def forward(self, supp_imgs, supp_mask, qry_imgs, train=False, n_iters=30):
+    def forward(self, supp_imgs, supp_mask, qry_imgs, train=False, n_iters=0, lr=0.01):
         """
         Args:
             supp_imgs: support images
@@ -45,7 +45,7 @@ class FewShotSeg(nn.Module):
         qry_bs = qry_imgs[0].shape[0]
         supp_bs = supp_imgs[0][0].shape[0]
         img_size = supp_imgs[0][0].shape[-2:]
-        supp_mask = torch.stack([torch.stack(way, dim=0) for way in supp_mask], 
+        supp_mask = torch.stack([torch.stack(way, dim=0) for way in supp_mask],
                                 dim=0).view(supp_bs, self.n_ways, self.n_shots, *img_size)  # B x Wa x Sh x H x W
 
         ###### Extract features ######
@@ -58,8 +58,11 @@ class FewShotSeg(nn.Module):
             qry_bs, self.n_queries, -1, *img_fts[dic].shape[-2:]) for _, dic in enumerate(img_fts)]
 
         ###### Get threshold #######
-        self.t = tao[self.n_ways * self.n_shots * supp_bs:] # t for query features
+        self.t = tao[self.n_ways * self.n_shots * supp_bs:]  # t for query features
         self.thresh_pred = [self.t for _ in range(self.n_ways)]
+
+        # self.t_ = tao[:self.n_ways * self.n_shots * supp_bs]  # t for support features
+        # self.thresh_pred_ = [self.t_ for _ in range(self.n_ways)]
 
         ###### Compute loss ######
         align_loss = torch.zeros(1).to(self.device)
@@ -71,42 +74,29 @@ class FewShotSeg(nn.Module):
                          range(len(supp_fts))]
             fg_prototypes = [self.getPrototype(supp_fts_[n]) for n in range(len(supp_fts))]
 
+            # ###### Get support predictions #######
+            # supp_preds = [torch.stack(
+            #     [self.getPred(supp_fts[n][epi, way], fg_prototypes[n][way], self.thresh_pred[way]) for way in
+            #      range(self.n_ways)],
+            #     dim=1) for n in range(len(supp_fts))]  # N x Wa x H' x W'
+            # supp_preds = [F.interpolate(supp_preds[n], size=img_size, mode='bilinear', align_corners=True)
+            #              for n in range(len(supp_fts))]
+
             ###### Get query predictions ######
             qry_pred = [torch.stack(
                 [self.getPred(qry_fts[n][epi], fg_prototypes[n][way], self.thresh_pred[way])
                  for way in range(self.n_ways)], dim=1) for n in range(len(qry_fts))]  # N x Wa x H' x W'
 
-            fg_prototypes_ = torch.stack([torch.stack(f, dim=0) for f in fg_prototypes], dim=0)
-            fg_prototypes_ = Parameter(fg_prototypes_)
-            optimizer = torch.optim.Adam([fg_prototypes_], lr=2e-3)
-
             ###### Prototype Refinement (only for test) ######
+            fg_prototypes_ = []
             if (not train) and n_iters > 0:  # iteratively update prototypes
-                update_iters = n_iters
-                while update_iters > 0:
-                    loss = torch.zeros(1).to(self.device)
-                    with torch.enable_grad():
-                        for n in range(len(qry_fts)):
-                            pred_mask = torch.sum(qry_pred[n], dim=-3)
-                            pred_mask = torch.stack((1.0 - pred_mask, pred_mask), dim=1).argmax(dim=1, keepdim=True)
-                            pred_mask = pred_mask.repeat([*qry_fts.shape[1:-2],1,1])
-                            bg_fts = qry_fts[n][epi] * (1 - pred_mask)
-                            fg_fts = torch.zeros_like(qry_fts[n][epi])
-                            for way in range(self.n_ways):
-                                fg_fts += fg_prototype_[way].unsqueeze(-1).unsqueeze(-1).repeat(*qry_pred.shape) * pred_mask[way][None, ...]
-                            new_fts = bg_fts + fg_fts
-                            loss += F.cross_entropy(qry_fts[n][epi], new_fts) / len(qry_fts) / n_iters
+                for n in range(len(qry_fts)):
+                    fg_prototypes_.append(
+                        self.updatePrototype(qry_fts[n], fg_prototypes[n], qry_pred[n], n_iters, lr, epi))
 
-                    optimizer.zero_grad()
-                    # loss.requires_grad_()
-                    loss.backward()
-                    optimizer.step()
-
-                    qry_pred = [torch.stack(
-                        [self.getPred(qry_fts[n][epi], fg_prototypes_[n][way], self.thresh_pred[way]) for way in
-                         range(self.n_ways)], dim=1) for n in range(len(qry_fts))]  # N x Wa x H' x W'
-
-                    update_iters += -1
+                qry_pred = [torch.stack(
+                    [self.getPred(qry_fts[n][epi], fg_prototypes_[n][way], self.thresh_pred[way]) for way in
+                     range(self.n_ways)], dim=1) for n in range(len(qry_fts))]  # N x Wa x H' x W'
 
             ###### Combine predictions of different feature maps ######
             qry_pred_up = [F.interpolate(qry_pred[n], size=img_size, mode='bilinear', align_corners=True)
@@ -128,6 +118,40 @@ class FewShotSeg(nn.Module):
 
         return output, align_loss / supp_bs
 
+    def updatePrototype(self, fts, prototype, pred, update_iters, lr, epi):
+
+        prototype_0 = torch.stack(prototype, dim=0)
+        prototype_ = Parameter(torch.stack(prototype, dim=0))
+
+        optimizer = torch.optim.Adam([prototype_], lr=lr)
+
+        while update_iters > 0:
+            with torch.enable_grad():
+                pred_mask = torch.sum(pred, dim=-3)
+                pred_mask = torch.stack((1.0 - pred_mask, pred_mask), dim=1).argmax(dim=1, keepdim=True)
+                pred_mask = pred_mask.repeat([*fts.shape[1:-2], 1, 1])
+                bg_fts = fts[epi] * (1 - pred_mask)
+                fg_fts = torch.zeros_like(fts[epi])
+                for way in range(self.n_ways):
+                    fg_fts += prototype_[way].unsqueeze(-1).unsqueeze(-1).repeat(*pred.shape) \
+                              * pred_mask[way][None, ...]
+                new_fts = bg_fts + fg_fts
+                fts_norm = torch.sigmoid((fts[epi] - fts[epi].min()) / (fts[epi].max() - fts[epi].min()))
+                new_fts_norm = torch.sigmoid((new_fts - new_fts.min()) / (new_fts.max() - new_fts.min()))
+                bce_loss = nn.BCELoss()
+                loss = bce_loss(fts_norm, new_fts_norm) # + beta * mse_loss(prototype_, prototype_0)
+
+            optimizer.zero_grad()
+            # loss.requires_grad_()
+            loss.backward()
+            optimizer.step()
+
+            pred = torch.stack([self.getPred(fts[epi], prototype_[way], self.thresh_pred[way])
+                                for way in range(self.n_ways)], dim=1)  # N x Wa x H' x W'
+
+            update_iters += -1
+
+        return prototype_
 
     def getPred(self, fts, prototype, thresh):
         """
@@ -222,4 +246,3 @@ class FewShotSeg(nn.Module):
                 loss += self.criterion(log_prob, supp_label[None, ...].long()) / n_shots / n_ways
 
         return loss
-
