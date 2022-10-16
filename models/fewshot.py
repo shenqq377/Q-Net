@@ -23,7 +23,7 @@ class FewShotSeg(nn.Module):
         self.criterion = nn.NLLLoss()
         self.alpha = torch.Tensor([alpha, 1-alpha])
 
-    def forward(self, supp_imgs, supp_mask, qry_imgs, train=False, n_iters=0, lr=0.01):
+    def forward(self, supp_imgs, supp_mask, qry_imgs, train=False, n_iters=0):
         """
         Args:
             supp_imgs: support images
@@ -92,7 +92,7 @@ class FewShotSeg(nn.Module):
             if (not train) and n_iters > 0:  # iteratively update prototypes
                 for n in range(len(qry_fts)):
                     fg_prototypes_.append(
-                        self.updatePrototype(qry_fts[n], fg_prototypes[n], qry_pred[n], n_iters, lr, epi))
+                        self.updatePrototype(qry_fts[n], fg_prototypes[n], qry_pred[n], n_iters, epi))
 
                 qry_pred = [torch.stack(
                     [self.getPred(qry_fts[n][epi], fg_prototypes_[n][way], self.thresh_pred[way]) for way in
@@ -118,12 +118,12 @@ class FewShotSeg(nn.Module):
 
         return output, align_loss / supp_bs
 
-    def updatePrototype(self, fts, prototype, pred, update_iters, lr, epi):
+    def updatePrototype(self, fts, prototype, pred, update_iters, epi):
 
         prototype_0 = torch.stack(prototype, dim=0)
         prototype_ = Parameter(torch.stack(prototype, dim=0))
 
-        optimizer = torch.optim.Adam([prototype_], lr=lr)
+        optimizer = torch.optim.Adam([prototype_], lr=0.01)
 
         while update_iters > 0:
             with torch.enable_grad():
@@ -139,7 +139,7 @@ class FewShotSeg(nn.Module):
                 fts_norm = torch.sigmoid((fts[epi] - fts[epi].min()) / (fts[epi].max() - fts[epi].min()))
                 new_fts_norm = torch.sigmoid((new_fts - new_fts.min()) / (new_fts.max() - new_fts.min()))
                 bce_loss = nn.BCELoss()
-                loss = bce_loss(fts_norm, new_fts_norm) # + beta * mse_loss(prototype_, prototype_0)
+                loss = bce_loss(fts_norm, new_fts_norm)
 
             optimizer.zero_grad()
             # loss.requires_grad_()
