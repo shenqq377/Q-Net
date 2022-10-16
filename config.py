@@ -62,10 +62,14 @@ def cfg():
     print_interval = 100
     save_snapshot_every = 1000
     max_iters_per_load = 1000  # epoch size, interval for reloading the dataset
-
+    alpha=0.9 # dual-scale
+    
     # Network
     # reload_model_path = '/home/SQQ/fsmis/ADNet/runs/ADNet_train_CHAOST2_cv0/1/snapshots/1000.pth'
     reload_model_path = None
+    
+    # Prototype Refinement
+    n_iters=7
 
     optim_type = 'sgd'
     optim = {
