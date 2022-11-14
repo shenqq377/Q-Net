@@ -51,9 +51,7 @@ We also put the package `supervoxels` in `./data`, run our modified file `./data
 
 ### Training  
 1. Download pre-trained ResNet-101 weights [vanilla version](https://download.pytorch.org/models/resnet101-63fe2227.pth) or [deeplabv3 version](https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth) and put your checkpoints folder, then replace the absolute path in the code `./models/encoder.py`.  
-2. Run `bash scripts/train_<abd,cmr>_mr.sh`
-For setting 1, EXCLUDE_LABEL=None, TEST_LABEL=[1,2,3,4] 
-For setting 2, EXCLUDE_LABEL=[1,4], TEST_LABEL=[2,3] # excluding slices containing liver(1) or spleen(4)
+2. Run `bash scripts/train_<abd,cmr>_mr.sh` 
 
 #### Note:  
 The alpha coefficient for dual-scale features in the code `./models/fewshot.py` should be manually modified.  
