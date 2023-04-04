@@ -1,6 +1,8 @@
 # Q-Net
 Codes for the following paper:
 
+[**Q-Net: Query-Informed Few-Shot Medical Image Segmentation**](https://arxiv.org/abs/2208.11451)
+
 @article{shen2022qnet,
 
   title={Q-Net: Query-Informed Few-Shot Medical Image Segmentation},
