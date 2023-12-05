@@ -28,7 +28,7 @@ class TestDataset(Dataset):
 
         self.image_dirs = sorted(self.image_dirs, key=lambda x: int(x.split('_')[-1].split('.nii.gz')[0]))
 
-        # remove test fold!
+        # test fold!
         self.FOLD = get_folds(args['dataset'])
         self.image_dirs = [elem for idx, elem in enumerate(self.image_dirs) if idx in self.FOLD[args['eval_fold']]]
 
